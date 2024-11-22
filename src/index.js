@@ -1,5 +1,7 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require('cors')
+
 
 
 const pg = require("pg");
@@ -16,6 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 3000
 
 app.use(express.json());
+app.use(cors())
 
 app.get('/', (req, res) => {
     res.send("Hello world!");
@@ -23,17 +26,17 @@ app.get('/', (req, res) => {
 
 app.get('/leaderboard/', async (req, res) => {
     const client = await pool.connect();
-    const result = await client.query("SELECT * FROM leaderboard");
-    res.json(result.rows);
+    const result = await client.query("SELECT * FROM leaderboard ORDER BY score DESC LIMIT 10");
+    res.json({scores: result.rows});
     client.release();
 })
 
 app.post('/leaderboard/', async (req, res) => {
     const body = req.body;
     const client = await pool.connect();
-    await client.query(`INSERT INTO leaderboard (username, score, "timeSurvived", "timeSubmitted") VALUES ($1, $2, $3, $4)`, [body.username, body.score, body.time, Math.floor(Date.now() / 1000)]);
+    await client.query(`INSERT INTO leaderboard (username, score, "timeSurvived", "timeSubmitted") VALUES ($1, $2, $3, $4)`, [body.username, body.score, body.timeSurvived, Math.floor(Date.now() / 1000)]);
     const result = await client.query("SELECT * FROM leaderboard");
-    res.json(result.rows);
+    res.json({scores: result.rows});
     client.release();
 })
 
